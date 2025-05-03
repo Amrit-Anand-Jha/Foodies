@@ -1,52 +1,17 @@
  <div align="center">
-<img src="https://github.com/me-shweta/Design-Den/blob/main/FoodiesWeblogo.png" alt="image" border="0"/>
-<h1>Connecting You to Your College Canteens</h1>
 
-<table align="center">
-    <thead align="center">
-        <tr border: 1px;>
-            <td><b>🌟 Stars</b></td>
-            <td><b>🍴 Forks</b></td>
-            <td><b>🐛 Issues</b></td>
-            <td><b>🔔 Open PRs</b></td>
-            <td><b>🔕 Close PRs</b></td>
-            <td><b> last commit</b></td>
-        </tr>
-     </thead>
-    <tbody>
-         <tr>
-            <td><img alt="Stars" src="https://img.shields.io/github/stars/VanshKing30/FoodiesWeb?style=flat&logo=github"/></td>
-             <td><img alt="Forks" src="https://img.shields.io/github/forks/VanshKing30/FoodiesWeb?style=flat&logo=github"/></td>
-            <td><img alt="Issues" src="https://img.shields.io/github/issues/VanshKing30/FoodiesWeb?style=flat&logo=github"/></td>
-            <td><img alt="Open Pull Requests" src="https://img.shields.io/github/issues-pr/VanshKing30/FoodiesWeb?style=flat&logo=github"/></td>
-           <td><img alt="Close Pull Requests" src="https://img.shields.io/github/issues-pr-closed/VanshKing30/FoodiesWeb?style=flat&color=critical&logo=github"/></td>
-           <td><img alt="Close Pull Requests" src="https://img.shields.io/github/last-commit/VanshKing30/FoodiesWeb?style=flat&color=critical&logo=github"/></td>
-        </tr>
-    </tbody>
-</table>
-</div>
+<h1>foodies</h1>
 
-# Tech Stacks
-
-![](https://img.shields.io/badge/React-61DAFB?style=for-the-badge&logo=react&color=blue)
-![](https://img.shields.io/badge/Express.js-8A2BE2?style=for-the-badge&logo=express.js&color=black)
-![](https://img.shields.io/badge/Node.js-8A2BE2?style=for-the-badge&logo=node.js&color=green)
-![](https://img.shields.io/badge/MongoDB-8A2BE2?style=for-the-badge&logo=MongoDB&color=orange)
-![](https://img.shields.io/badge/mongoose-8A2BE2?style=for-the-badge&logo=mongoose&labelcolor=yellow)
-![](https://img.shields.io/badge/Tailwindcss-8A2BE2?style=for-the-badge&logo=Tailwind&color=yellow)
 
 </div>
 
-## Table of Contents 📒
 
-- [Introduction 👋](#introduction)
-- [Features 🌟](#features)
-- [Quick Start 🚀](#quickstart)
-- [Contribution Guide🤝](#contribution)
 
-# Introduction <a name="introduction"></a>
 
-Welcome👋
+
+# Introduction
+
+Welcome
 
 <p> 
 Welcome to Foodies, your go-to college dining companion! Designed for seamless campus culinary experiences, Foodies simplifies menu exploration and nutritional insights. Access daily canteen menus, make informed dietary choices with Spoonacular integration, and empower canteen efficiency. Our platform prioritizes user security and simplicity, ensuring effortless student sign-ups and hassle-free canteen management. Stay up-to-date with our Health News section, delivering valuable insights for healthier eating habits. Embrace convenience and culinary enlightenment with Foodies! 🍽️ 
@@ -58,7 +23,7 @@ Welcome to Foodies, your go-to college dining companion! Designed for seamless c
 
 <br/>
 
-# Features🌟 <a name="features"></a>
+# Features 
 
 - **Menu Exploration**: Easily check out daily menus of all campus canteens from personal devices.
 - **Nutritional Insights**: Access nutritional information for dishes, aiding in informed dietary choices.
@@ -72,19 +37,12 @@ Welcome to Foodies, your go-to college dining companion! Designed for seamless c
 - **Tailwind CSS**: Ensures stylish and user-friendly designs.
 - **Express.js**: Powers the backend operations.
 - **MongoDB Atlas and Mongoose**: Store and manage important data.
-- **Spoonacular API**: Offers nutritional information and recipe ideas.
-- **G News API**: Fetches health-related articles.
-- **Bcrypt and JWT**: Ensure data security and protection.
 
-## Future Scope
 
-- **Poll Functionality**: Allow users to vote on preferred dishes.
-- **Feedback System**: Share thoughts with canteens for service improvement.
-- **Expanding Horizons**: Extend Foodies to multiple colleges for personalized canteen listings.
 
-# Quick Start for Contributors 🚀 <a name="quickstart"></a>
+# Quick Start for Contributors 
 
-## To get started with contributing to the FoodiesWeb project, follow these steps:
+## To get started with contributing to the Foodies project, follow these steps:
 
 1. **Fork and clone the repository**
 2. **Navigate to the Project Directory:**
@@ -165,53 +123,7 @@ Your app is ready to be deployed!
 
 See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
 
-### `npm run eject`
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single-build dependency from your project.
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point, you're on your own.
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However, we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-.
-
-## 🤠 Project Admin
-
-<a href="https://github.com/VanshKing30"><img src="https://avatars.githubusercontent.com/u/74658625?v=4" alt="image" border="0" height="120"></a>
-
-# ✴️ Contribution-Guide <a name="contribution"></a>
-
-- Fork the Repository
-
-- Set Up the Project, by cloning the repository to your local machine
-- Install dependencies.
-- Start the project.
-
-- Create a New Branch
-- Create or work on existing issues
-
-- Make changes and commit with descriptive messages
-
-- Push changes to your forked repository.
-- Create a Pull Request
-
-## <center>Part of GSSoC24</center>
-
-<img src="https://imgur.com/wuiJXqr.png"/>
-
-<h2 align = "center">Our Contributors ❤️</h2>    
-<div align = "center">
- <h3>Thank you for being a part of this project!</h3>
-
-![Contributors](https://contrib.rocks/image?repo=VanshKing30/FoodiesWeb)<br>
-
-</div>
-
-<p align="right">(<a href="#top">Back to top</a>)</p>
