@@ -1,0 +1,95 @@
+.App {
+  text-align: center;
+}
+input::-ms-reveal,
+input::-ms-clear {
+  display: none;
+}
+
+.App-logo {
+  height: 40vmin;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .App-logo {
+    animation: App-logo-spin infinite 20s linear;
+  }
+}
+li:hover span {
+  opacity: 1;
+}
+
+.App-header {
+  background-color: #282c34;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(10px + 2vmin);
+  color: white;
+}
+
+.App-link {
+  color: #61dafb;
+}
+
+@keyframes App-logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.Nav__item{
+  font-size: 52px !important;
+}
+
+.StarRating  {
+  display: flex;
+  flex-direction: row;
+}
+
+.StarRating__star {
+  font-size: 2rem;
+  color: #d3d3d3;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.StarRating__star--on {
+  color: #ffc107;
+}
+
+.StarRating__star--off {
+  color: #d3d3d3;
+}
+.Reviews__container{
+  display: flex;
+  flex-direction: row;
+  justify-content: space-around;
+  
+}
+.Reviews__card {
+  width: calc(90vw/3);
+  border: 1px solid green;
+  background-color: white;
+  background-color: aquamarine;
+}
+.Feedback__standard{
+  background-color: white;
+  padding: 2% 3%;
+}
+.Feedback__name{
+  margin: 2% 3%;
+}
+
+.stars {
+  color: yellow;
+  font-size: 24px; /* Increase the font size to make the stars bigger */
+}

@@ -1,0 +1,694 @@
+const bcrypt = require("bcrypt");
+const User = require("../models/studentLoginInfo");
+const jwt = require("jsonwebtoken");
+const Canteen = require("../models/canteenLoginInfo");
+const Session = require("../models/session");
+const Contact = require("../models/Contact");
+const {
+  forgotPasswordToken,
+  verifyToken,
+  findUserByEmail,
+  findUserById,
+} = require("../utils/PasswordTokenAndUser");
+const nodemailer = require("nodemailer");
+
+require("dotenv").config();
+
+exports.studentSignup = async (req, res) => {
+  console.log("This is jwt", process.env.JWT_SECRET);
+  try {
+    console.log(req.body);
+    const { name, email, collegeName, accountType, password, confirmPassword } =
+      req.body;
+
+    if (password !== confirmPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "Password and Confirm password didn't match, try again",
+      });
+    }
+
+    const existingUser = await User.findOne({ email });
+
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        message: "User already exists",
+      });
+    }
+
+    let hashedPassword;
+
+    try {
+      hashedPassword = await bcrypt.hash(password, 10);
+    } catch (error) {
+      console.log(error);
+      return res.status(500).json({
+        success: false,
+        message: "Error in hashing password",
+      });
+    }
+
+    const user = await User.create({
+      name,
+      email,
+      collegeName,
+      accountType,
+      password: hashedPassword,
+    });
+
+    const payload = {
+      email: user.email,
+      id: user._id,
+      accountType: user.accountType,
+    };
+
+    let token = jwt.sign(payload, process.env.JWT_SECRET, {
+      expiresIn: "2h",
+    });
+
+    // creating a session
+    const session = new Session({
+      userId: user._id,
+      token,
+    });
+    await session.save();
+
+    user.password = undefined;
+
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: true,
+      maxAge: 3600000,
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "User created successfully",
+      token,
+      user,
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      success: false,
+      message: "User cannot be registered",
+    });
+  }
+};
+
+exports.studentLogin = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({
+        success: false,
+        message: "Please Fill all the deatils",
+      });
+    }
+
+    let user = await User.findOne({ email });
+
+    if (!user) {
+      console.log("User not found");
+      return res.status(401).json({
+        success: false,
+        message: "User is not registred",
+      });
+    }
+
+    console.log("This is our user", user);
+    const payload = {
+      email: user.email,
+      id: user._id,
+      accountType: user.accountType,
+    };
+
+    if (await bcrypt.compare(password, user.password)) {
+      let token = jwt.sign(payload, process.env.JWT_SECRET, {
+        expiresIn: "2h",
+      });
+
+      // creating a session
+      const session = new Session({
+        userId: user._id,
+        token,
+      });
+      await session.save();
+
+      user = user.toObject();
+      user.token = token;
+      user.password = undefined;
+
+      // const options = {
+      //   expires: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
+      //   httpOnly: true,
+      // };
+
+      // res.cookie("token", token, options).status(200).json({
+      //   success: true,
+      //   token,
+      //   user,
+      //   message: "User logged in succesfully",
+      // });
+
+      // Setting cookie
+      res.cookie("token", token, {
+        httpOnly: true,
+        secure: true,
+        maxAge: 3600000,
+      });
+      res.json({
+        success: true,
+        message: "Logged in successfully",
+        token,
+        user,
+      });
+    } else {
+      return res.status(403).json({
+        success: false,
+        message: "Pasword Incorrect",
+      });
+    }
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      success: false,
+      message: "Login failure",
+    });
+  }
+};
+
+// Student Logout Controller
+exports.studentLogout = async (req, res) => {
+  try {
+    await User.findByIdAndUpdate(
+      req.user?._id,
+      {
+        $unset: {
+          token: 1,
+        },
+      },
+      {
+        new: true,
+      }
+    );
+
+    // const options = {
+    //   httpOnly: true,
+    // };
+
+    // return res.status(200).clearCookie("token", options).json({
+    //   success: true,
+    //   message: "User Logged off successfully.",
+    // });
+
+    const token =
+      req.cookies?.token ||
+      req?.header("Authorization")?.replace("Bearer ", "");
+
+    if (token) {
+      await Session.findOneAndDelete({ token });
+      res.clearCookie("token");
+    }
+    res.status(200).json({
+      success: true,
+      message: "Logged out successfully",
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      success: false,
+      message: "Logout failure",
+    });
+  }
+};
+
+// Controller for changing the student password
+exports.changeStudentPassword = async (req, res) => {
+  const { oldPassword, newPassword } = req.body;
+  const user = await User.findById(req.user._id);
+
+  const isPasswordCorrect = await bcrypt.compare(oldPassword, user.password);
+
+  if (!isPasswordCorrect) {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid old password",
+    });
+  }
+
+  const newHashedPassword = await bcrypt.hash(newPassword, 10);
+
+  user.password = newHashedPassword;
+  user.save();
+
+  return res.status(200).json({
+    success: true,
+    message: "Password updated successfully.",
+  });
+};
+
+//for canteens
+
+exports.canteenSignup = async (req, res) => {
+  console.log("Received signup request with data:", req.body);
+  try {
+    const { name, email, collegeName, accountType, password } = req.body;
+    const existingCanteen = await Canteen.findOne({ email });
+
+    if (existingCanteen) {
+      console.log("User already exists with email:", email);
+      return res.status(400).json({
+        success: false,
+        message: "User already exists",
+      });
+    }
+
+    let hashedPassword;
+
+    try {
+      hashedPassword = await bcrypt.hash(password, 10);
+    } catch (error) {
+      console.error("Error in hashing password:", error);
+      return res.status(500).json({
+        success: false,
+        message: "Error in hashing password",
+      });
+    }
+
+    const canteen = await Canteen.create({
+      name,
+      email,
+      collegeName,
+      accountType,
+      password: hashedPassword,
+    });
+
+    // Create a token
+    const token = jwt.sign(
+      {
+        id: canteen._id,
+        email: canteen.email,
+        accountType: canteen.accountType,
+      },
+      process.env.JWT_SECRET,
+      {
+        expiresIn: "1h", // Set token expiration time as needed
+      }
+    );
+
+    console.log("User created successfully with ID:", canteen._id);
+    return res.status(200).json({
+      success: true,
+      message: "User created successfully",
+      cantId: canteen._id,
+      token,
+    });
+  } catch (error) {
+    console.error("Error during user registration:", error);
+    return res.status(500).json({
+      success: false,
+      message: "User cannot be registered",
+    });
+  }
+};
+exports.canteenLogin = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({
+        success: false,
+        message: "Please Fill all the deatils",
+      });
+    }
+
+    let canteen = await Canteen.findOne({
+      email,
+    });
+    if (!canteen) {
+      return res.status(401).json({
+        success: false,
+        message: " Canteen is not registred",
+      });
+    }
+
+    const payload = {
+      email: canteen.email,
+      id: canteen._id,
+      accountType: canteen.accountType,
+    };
+
+    if (await bcrypt.compare(password, canteen.password)) {
+      let token = jwt.sign(payload, process.env.JWT_SECRET, {
+        expiresIn: "2h",
+      });
+      canteen = canteen.toObject();
+      canteen.token = token;
+      console.log(canteen);
+      canteen.password = undefined;
+      console.log(canteen);
+
+      // const options = {
+      //   expires: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
+      //   httpOnly: true,
+      // };
+
+      // res.cookie("token", token, options).status(200).json({
+      //   success: true,
+      //   token,
+      //   canteen,
+      //   message: "Canteen logged in succesfully",
+      //   cantId: canteen._id,
+      // });
+
+      // Create session
+      const session = new Session({
+        userId: canteen._id,
+        token,
+      });
+      await session.save();
+
+      // Set cookie
+      res.cookie("token", token, {
+        httpOnly: true,
+        secure: true,
+        maxAge: 3600000,
+      });
+      res.json({
+        success: true,
+        message: "Logged in successfully",
+        token,
+        canteen,
+        cantId: canteen._id,
+      });
+    } else {
+      return res.status(403).json({
+        success: false,
+        message: "Pasword Incorrect",
+      });
+    }
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      success: false,
+      message: "Login failure",
+    });
+  }
+};
+
+// Canteen Logout Controller
+exports.canteenLogout = async (req, res) => {
+  try {
+    await Canteen.findByIdAndUpdate(
+      req.user._id,
+      {
+        $unset: {
+          token: 1,
+        },
+      },
+      {
+        new: true,
+      }
+    );
+
+    // const options = {
+    //   httpOnly: true,
+    // };
+
+    // return res.status(200).clearCookie("token", options).json({
+    //   success: true,
+    //   message: "Canteen User Logged off successfully.",
+    // });
+
+    const token =
+      req.cookies?.token ||
+      req?.header("Authorization")?.replace("Bearer ", "");
+
+    if (token) {
+      await Session.findOneAndDelete({ token });
+      res.clearCookie("token");
+    }
+    res.status(200).json({
+      success: true,
+      message: "Logged out successfully",
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      success: false,
+      message: "Logout failure",
+    });
+  }
+};
+
+// Canteen Reset Password
+exports.changeCanteenPassword = async (req, res) => {
+  const { oldPassword, newPassword } = req.body;
+  const user = await Canteen.findById(req.user._id);
+
+  const isPasswordCorrect = await bcrypt.compare(oldPassword, user.password);
+
+  if (!isPasswordCorrect) {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid old password",
+    });
+  }
+
+  const newHashedPassword = await bcrypt.hash(newPassword, 10);
+
+  user.password = newHashedPassword;
+  user.save();
+
+  return res.status(200).json({
+    success: true,
+    message: "Password updated successfully.",
+  });
+};
+
+//contactUs
+
+exports.saveContactMessage = async (req, res) => {
+  try {
+    const { name, email, message } = req.body;
+    if (!name || !email || !message) {
+      return res.status(400).send("All fields are required");
+    }
+    const newContact = new Contact({ name, email, message });
+    await newContact.save();
+    res.status(201).send("Message received");
+  } catch (error) {
+    console.error("Error saving message:", error.message, error);
+    res.status(500).send("Error saving message");
+  }
+};
+
+// verify user for reset password
+exports.forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+    const existingUser = await findUserByEmail(email);
+
+    if (!existingUser) {
+      return res.status(400).json({
+        success: false,
+        message: "User does not exist",
+      });
+    } else {
+      const tokenReturn = forgotPasswordToken(existingUser);
+      // const link = `http://localhost:3000/api/v1/newPassword/${existingUser._id}/${tokenReturn}`;
+
+      const link = `https://foodies-web-app.vercel.app/api/v1/newPassword/${existingUser._id}/${tokenReturn}`;
+      console.log("Link is: ", link);
+
+      const transporter = nodemailer.createTransport({
+        service: "gmail",
+        auth: {
+          user: process.env.EMAIL,
+          pass: process.env.MAILPASS,
+        },
+      });
+
+      const mailOptions = {
+        from: process.env.EMAIL,
+        to: email,
+        subject: "Password Reset Link",
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ccc; border-radius: 10px;">
+            <h2 style="text-align: center; color: #333;">Password Reset Request</h2>
+            <p style="color: #333;">Hello,</p>
+            <p style="color: #333;">You have requested to reset your password. Please click the button below to reset your password:</p>
+            <div style="text-align: center; margin: 20px 0;">
+              <a href="${link}" style="background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Reset Password</a>
+            </div>
+            <p style="color: #333;">If you did not request this, please ignore this email.</p>
+            <p style="color: #333;">Thank you,</p>
+            <p style="color: #333;">FoodiesWeb</p>
+            <hr>
+            <p style="color: #999; text-align: center;">&copy; 2024 Your Company Name. All rights reserved.</p>
+          </div>
+        `,
+      };
+
+      await transporter.sendMail(mailOptions, function (error, info) {
+        if (error) {
+          console.log(error);
+        }
+      });
+
+      res.status(201).json({
+        msg: "You should receive an email",
+      });
+    }
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      success: false,
+      message: "User verification failed",
+    });
+  }
+};
+
+//for verification of link
+exports.verifyLink = async (req, res) => {
+  const { id, token } = req.params;
+  console.log(req.params);
+
+  const oldUser = await findUserById(id);
+  if (!oldUser) {
+    return res.status(404).json({
+      success: false,
+      message: "User not found!",
+    });
+  }
+
+  try {
+    console.log("Found user: ", oldUser);
+    const verify = verifyToken(oldUser, token);
+    console.log("VerifyToken result: ", verify);
+
+    if (verify.id === id) {
+      res.status(201).json({
+        email: verify.email,
+        status: "Verified",
+      });
+    } else {
+      res.status(201).json({
+        status: "Cannot Verify",
+      });
+    }
+  } catch (error) {
+    res.status(201).json({
+      status: "Not Verified",
+    });
+  }
+};
+
+exports.resetPassword = async (req, res) => {
+  const { id, token } = req.params;
+  const { password } = req.body;
+
+  console.log(password, " ", id, " ", token);
+
+  try {
+    const oldUser = await findUserById(id);
+
+    if (!oldUser) {
+      return res.status(404).json("User not found");
+    }
+
+    const verify = verifyToken(oldUser, token);
+    if (verify.id !== id) {
+      return res.status(201).json({ change: false });
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    const newPassword = await bcrypt.hash(password, salt);
+
+    if (oldUser instanceof User) {
+      await User.findByIdAndUpdate(id, {
+        password: newPassword,
+      });
+    } else if (oldUser instanceof Canteen) {
+      await Canteen.findByIdAndUpdate(id, {
+        password: newPassword,
+      });
+    }
+
+    res.status(201).json({ change: true });
+  } catch (error) {
+    console.log("Error while changing password: ", error);
+    res.status(500).json("Some error occurred!");
+  }
+};
+
+exports.Contact= async (req, res) => {
+  const { name, email, message } = req.body;
+
+  // Set up Nodemailer transport
+  const transporter = nodemailer.createTransport({
+    service: 'Gmail',
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS,
+    },
+  });
+
+  const mailOptions = {
+    from: process.env.EMAIL_USER,
+    to: email,
+    subject: "Acknowledgment: We've received your message",
+    html: `
+    <div style="background-color: #ffffff; padding: 20px; font-family: Arial, sans-serif;">
+      <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px;">
+        <tr>
+          <td align="center" bgcolor="#172554" style="padding: 20px 0; color: #ffffff;">
+            <img src="https://raw.githubusercontent.com/VanshKing30/FoodiesWeb/main/public/logo.png" alt="Foodies Logo" style="display: block; margin-bottom: 10px;" />
+            <h1 style="font-size: 24px; margin: 0;">Foodies</h1>
+          </td>
+        </tr>
+        <tr>
+          <td bgcolor="#ffffff" style="padding: 20px; color: #172554;">
+            <h2 style="font-size: 20px;">Hello ${name},</h2>
+            <p style="font-size: 16px; line-height: 1.5;">
+              Thank you for contacting us. We have received your message:
+            </p>
+            <blockquote style="font-size: 16px; line-height: 1.5; color: #555555;">
+              "${message}"
+            </blockquote>
+            <p style="font-size: 16px; line-height: 1.5;">
+              We will get back to you shortly.
+            </p>
+            <p style="font-size: 16px; line-height: 1.5;">
+              Best regards,<br />
+              <strong>Foodies Web Team</strong>
+            </p>
+          </td>
+        </tr>
+        <tr>
+          <td bgcolor="#f0f0f0" style="padding: 20px; text-align: center; color: #555555;">
+            <p style="font-size: 14px;">&copy; 2024 Foodies. All rights reserved.</p>
+          </td>
+        </tr>
+      </table>
+    </div>
+  `,
+  };
+
+  try {
+    // Send acknowledgment email to the user
+    await transporter.sendMail(mailOptions);
+
+    // Save contact details in the database
+    const contact = new Contact({ name, email, message });
+    await contact.save();
+
+    res.status(200).json({ message: "Message sent and saved successfully." });
+  } catch (error) {
+    console.error("Error sending email or saving contact:", error);
+    res.status(500).json({ message: "Failed to send email or save message." });
+  }
+};
